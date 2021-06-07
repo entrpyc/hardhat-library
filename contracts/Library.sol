@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^ 0.8 .0;
+pragma solidity ^0.7.5;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Library is Ownable {
-  event BookAdded(string _title, uint32 _stock);
+  event BookAdded(bytes32 _id, string _title, uint32 _stock);
   event BookStockUpdated(string _title, uint32 _stock);
   event BookBorrowedByUser(string _title, address _userId);
   event BookReturnedByUser(string _title, address _userId);
@@ -40,12 +40,13 @@ contract Library is Ownable {
 
 
   function addBook(string calldata _title, uint32 _quantity) public onlyOwner {
-    books[getBookIdByTitle(_title)] = Book(_title, _quantity, new address[](0));
+    bytes32 bookId = getBookIdByTitle(_title);
+    books[bookId] = Book(_title, _quantity, new address[](0));
 
-    emit BookAdded(_title, _quantity);
+    emit BookAdded(bookId, _title, _quantity);
   }
 
-  function updateStockBookQuantity(string calldata _title, uint32 _quantity) public onlyOwner {
+  function updateBookStock(string calldata _title, uint32 _quantity) public onlyOwner {
     books[getBookIdByTitle(_title)].stock = _quantity;
 
     emit BookStockUpdated(_title, _quantity);
@@ -66,5 +67,15 @@ contract Library is Ownable {
     booksThatUsersBorrowed[bookId][msg.sender] = false;
 
     emit BookReturnedByUser(_title, msg.sender);
+  }
+
+  function getBook(string calldata _title) public view returns(bytes32 id, string memory title, uint32 stock) {
+    bytes32 bookId = getBookIdByTitle(_title);
+    return (bookId, books[bookId].title, books[bookId].stock);
+  }
+
+  function getUsersThatBorrowedTheBook(string calldata _title) public view returns(address[] memory ids) {
+    bytes32 bookId = getBookIdByTitle(_title);
+    return (books[bookId].usersThatBorrowedTheBook);
   }
 }
